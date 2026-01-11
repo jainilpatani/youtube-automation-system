@@ -1,4 +1,3 @@
-# main.py
 import sys
 import os
 
@@ -31,7 +30,7 @@ def run():
     print("🧮 Scoring topics...")
     scored_topics = score_topics(google_trends, reddit_trends)
     if not scored_topics:
-        scored_topics = [("AI Automation for Beginners", 85)]  # Fallback
+        scored_topics = [("AI Automation for Beginners", 85)]
 
     create_dashboard(scored_topics)
     best_topic, best_score = scored_topics[0]
@@ -42,7 +41,7 @@ def run():
     memory = load_memory()
     patterns = extract_patterns(memory)
 
-    # FIX: Convert dictionary to string so AI can read it
+    # FIX: Extract string from dictionary
     style_notes_text = ""
     if patterns and "style_notes" in patterns:
         style_notes_text = " | ".join(map(str, patterns["style_notes"][:5]))
@@ -53,7 +52,7 @@ def run():
     draft_script = generate_original_script(best_topic)
 
     print("🧠 Applying critic + clarity writer...")
-    # FIX: Pass the text string, not the dictionary
+    # FIX: Pass the string, not the dict
     final_output = apply_critic_and_writer(
         draft_script=draft_script,
         style_notes=style_notes_text
@@ -71,10 +70,7 @@ def run():
         shorts = []
 
     print("💾 Saving content...")
-    try:
-        save_all(topic=best_topic, script=final_output, shorts=shorts)
-    except:
-        print("⚠️ Save failed, printing output:\n", final_output)
+    save_all(topic=best_topic, script=final_output, shorts=shorts)
 
     print("\n✅ DONE")
 

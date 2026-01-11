@@ -6,44 +6,50 @@ from config import OPENAI_API_KEY
 client = OpenAI(api_key=OPENAI_API_KEY)
 
 
-def apply_critic_and_writer(draft_script: str, style_notes: str) -> dict:
+def apply_critic_and_writer(
+        draft_script: str,
+        style_notes: str = "",
+        competitor_data: str = ""  # <--- NEW INPUT
+) -> dict:
+    # Build context string
+    context_block = ""
+    if style_notes:
+        context_block += f"\nPASSED WINNING PATTERNS:\n{style_notes}\n"
+    if competitor_data:
+        context_block += f"\nREAL-TIME COMPETITOR DATA:\n{competitor_data}\n"
+
     prompt = f"""
-You are TWO experts working together.
+    You are TWO EXPERTS working together.
 
-CRITIC:
-- Improve retention
-- Remove hype and fear
-- Ensure advertiser safety
+    INPUT SCRIPT:
+    \"\"\"
+    {draft_script}
+    \"\"\"
 
-WRITER:
-- Simple English
-- Short spoken sentences
-- Calm, confident tone
+    {context_block}
 
-STYLE NOTES FROM PAST BEST CONTENT:
-{style_notes}
+    TASK:
+    1. Analyze the competitor data. If there are "OUTLIER" videos, steal their angle (but not their words).
+    2. Rewrite the script to match the viral energy of the top competitors.
+    3. Ensure the tone is calm and educational (no hype).
 
-INPUT SCRIPT:
-\"\"\"
-{draft_script}
-\"\"\"
-
-Return ONLY valid JSON in this format:
-
-{{
-  "title": "string",
-  "thumbnail": "string",
-  "final_script": "string",
-  "seo_keywords": ["string", "string"]
-}}
-"""
+    OUTPUT FORMAT (JSON):
+    {{
+        "title": "Viral title based on competitor analysis",
+        "thumbnail": "Visual description",
+        "script": "The full rewritten script...",
+        "keywords": ["tag1", "tag2"]
+    }}
+    """
 
     response = client.chat.completions.create(
         model="gpt-4o-mini",
         messages=[{"role": "user", "content": prompt}],
-        temperature=0.5,
-        max_tokens=1400,
-        response_format={"type": "json_object"}
+        response_format={"type": "json_object"},
+        temperature=0.4
     )
 
-    return json.loads(response.choices[0].message.content)
+    try:
+        return json.loads(response.choices[0].message.content)
+    except:
+        return {"script": draft_script, "title": "Error", "keywords": []}
