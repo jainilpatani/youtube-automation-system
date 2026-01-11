@@ -1,65 +1,82 @@
 # main.py
+import sys
+import os
+
+# Ensure Core imports work
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
 from Core.trend_collector import get_google_trends, get_reddit_trends
 from Core.topic_scorer import score_topics
 from Core.analytics import create_dashboard
 from Core.script_generator import generate_original_script
-from Core.critic_writer import apply_critic_and_writer
 from Core.shorts_generator import generate_shorts
+from Core.posting_time_ai import best_posting_time
 from Core.memory_engine import load_memory, extract_patterns
+from Core.critic_writer import apply_critic_and_writer
 from export.exporter import save_all
-
-FALLBACK_TOPIC = "How AI is changing the future of work"
 
 
 def run():
-    print("🚀 Starting YouTube Automation System")
+    print("🚀 Starting SAFE YouTube Automation System\n")
 
-    # Collect trends
-    google = get_google_trends()
-    reddit = get_reddit_trends()
+    # 1. Trends
+    print("📊 Collecting trends...")
+    google_trends = get_google_trends()
+    try:
+        reddit_trends = get_reddit_trends()
+    except:
+        reddit_trends = []
 
-    # Score topics
-    scored_topics = score_topics(google, reddit)
-
-    # 🛑 Crash prevention
+    # 2. Score
+    print("🧮 Scoring topics...")
+    scored_topics = score_topics(google_trends, reddit_trends)
     if not scored_topics:
-        print("⚠️ No topics found. Using fallback topic.")
-        scored_topics = [(FALLBACK_TOPIC, 1)]
+        scored_topics = [("AI Automation for Beginners", 85)]  # Fallback
 
-    dashboard = create_dashboard(scored_topics)
-    print("\n📊 DASHBOARD PREVIEW")
-    print(dashboard.head())
-
+    create_dashboard(scored_topics)
     best_topic, best_score = scored_topics[0]
-    print(f"\n🏆 Selected Topic: {best_topic} (Score {best_score})")
+    print(f"\n🏆 Selected TOPIC: {best_topic} (Score: {best_score})")
 
-    # Load memory
+    # 3. Memory (FIXED)
+    print("🧠 Loading channel memory...")
     memory = load_memory()
-    style_notes_list = extract_patterns(memory)
+    patterns = extract_patterns(memory)
 
-    # ✅ Convert memory list → single string
-    style_notes = "\n".join(style_notes_list) if style_notes_list else ""
+    # FIX: Convert dictionary to string so AI can read it
+    style_notes_text = ""
+    if patterns and "style_notes" in patterns:
+        style_notes_text = " | ".join(map(str, patterns["style_notes"][:5]))
+        print(f"   ↳ Adapting to past wins: {style_notes_text[:50]}...")
 
-    # Generate script
+    # 4. Generate & Critic
+    print("\n✍️ Generating original draft...")
     draft_script = generate_original_script(best_topic)
 
-    # Critic + Writer (JSON-safe)
-    final_content = apply_critic_and_writer(
+    print("🧠 Applying critic + clarity writer...")
+    # FIX: Pass the text string, not the dictionary
+    final_output = apply_critic_and_writer(
         draft_script=draft_script,
-        style_notes=style_notes
+        style_notes=style_notes_text
     )
 
-    # Generate Shorts
-    shorts = generate_shorts(final_content["final_script"])
+    if not final_output.get("script"):
+        print("❌ Script generation failed.")
+        return
 
-    # Save all outputs
-    save_all(
-        topic=best_topic,
-        script=final_content,
-        shorts=shorts
-    )
+    # 5. Shorts & Save
+    print("📱 Generating Shorts...")
+    try:
+        shorts = generate_shorts(final_output["script"])
+    except:
+        shorts = []
 
-    print("✅ Pipeline completed successfully")
+    print("💾 Saving content...")
+    try:
+        save_all(topic=best_topic, script=final_output, shorts=shorts)
+    except:
+        print("⚠️ Save failed, printing output:\n", final_output)
+
+    print("\n✅ DONE")
 
 
 if __name__ == "__main__":
