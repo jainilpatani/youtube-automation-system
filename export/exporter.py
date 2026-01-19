@@ -1,68 +1,84 @@
-# export/exporter.py
-
 import os
 import json
+import ast
 from datetime import date
 
 
-def create_video_structure(
-    topic,
-    script_text,
-    titles,
-    description,
-    tags,
-    thumbnail_text,
-    shorts_list,
-    score_data,
-    revenue_data,
-    posting_time_data
-):
+def format_script_for_human(content):
+    if isinstance(content, str) and content.strip().startswith("{"):
+        try:
+            content = json.loads(content)
+        except:
+            pass
+
+    if isinstance(content, dict):
+        readable = "# 🎬 VIDEO SCRIPT\n\n"
+        for time, dets in content.items():
+            if isinstance(dets, dict):
+                readable += f"### ⏰ {time}\n**👀 VISUAL:** {dets.get('visual', '')}\n**🎙️ AUDIO:** {dets.get('host', '')}\n\n"
+        return readable
+
+    if isinstance(content, list): return "\n\n".join(str(x) for x in content)
+    return str(content)
+
+
+def create_video_structure(topic, script_text, titles, description, tags, thumbnail_text, shorts_list, score_data,
+                           revenue_data, posting_time_data):
     today = date.today()
-    year = today.strftime("%Y")
-    month = today.strftime("%m_%b").upper()
-    day = today.strftime("%Y-%m-%d")
+    base_path = f"uploads/{today.strftime('%Y')}/{today.strftime('%m_%b').upper()}/{today.strftime('%Y-%m-%d')}_{topic.lower().replace(' ', '-')[:40]}"
 
-    topic_slug = topic.lower().replace(" ", "-")[:40]
+    for d in ["long", "shorts", "meta"]: os.makedirs(f"{base_path}/{d}", exist_ok=True)
 
-    base_path = f"uploads/{year}/{month}/{day}_{topic_slug}"
+    with open(f"{base_path}/long/01_script.txt", "w", encoding="utf-8") as f:
+        f.write(format_script_for_human(script_text))
+    with open(f"{base_path}/long/02_titles.txt", "w", encoding="utf-8") as f:
+        f.write(str(titles))
+    with open(f"{base_path}/long/03_description.txt", "w", encoding="utf-8") as f:
+        f.write(str(description))
+    with open(f"{base_path}/long/04_tags.txt", "w", encoding="utf-8") as f:
+        f.write(str(tags))
+    with open(f"{base_path}/long/05_thumbnail_text.txt", "w", encoding="utf-8") as f:
+        f.write(str(thumbnail_text))
 
-    long_path = f"{base_path}/long"
-    shorts_path = f"{base_path}/shorts"
-    meta_path = f"{base_path}/meta"
+    if shorts_list:
+        for i, s in enumerate(shorts_list, 1):
+            with open(f"{base_path}/shorts/short_{i:02d}.txt", "w", encoding="utf-8") as f:
+                f.write(json.dumps(s, indent=2) if isinstance(s, dict) else str(s))
 
-    os.makedirs(long_path, exist_ok=True)
-    os.makedirs(shorts_path, exist_ok=True)
-    os.makedirs(meta_path, exist_ok=True)
-
-    # ---- LONG VIDEO FILES ----
-    with open(f"{long_path}/01_script.txt", "w", encoding="utf-8") as f:
-        f.write(script_text)
-
-    with open(f"{long_path}/02_titles.txt", "w", encoding="utf-8") as f:
-        f.write("\n".join(titles))
-
-    with open(f"{long_path}/03_description.txt", "w", encoding="utf-8") as f:
-        f.write(description)
-
-    with open(f"{long_path}/04_tags.txt", "w", encoding="utf-8") as f:
-        f.write(", ".join(tags))
-
-    with open(f"{long_path}/05_thumbnail_text.txt", "w", encoding="utf-8") as f:
-        f.write(thumbnail_text)
-
-    # ---- SHORTS ----
-    for i, short in enumerate(shorts_list, 1):
-        with open(f"{shorts_path}/short_{i:02d}.txt", "w", encoding="utf-8") as f:
-            f.write(short)
-
-    # ---- META ----
-    with open(f"{meta_path}/score.json", "w") as f:
+    with open(f"{base_path}/meta/score.json", "w") as f:
         json.dump(score_data, f, indent=2)
-
-    with open(f"{meta_path}/revenue_prediction.json", "w") as f:
-        json.dump(revenue_data, f, indent=2)
-
-    with open(f"{meta_path}/posting_time.json", "w") as f:
-        json.dump(posting_time_data, f, indent=2)
-
     print(f"✅ Content saved at: {base_path}")
+
+
+def save_all(topic, script, shorts, score=0):
+    """
+    Now accepts 'score' to generate real revenue predictions.
+    """
+    # 1. Extract Data
+    script_body = script.get("script", "")
+    title = script.get("title", f"Video about {topic}")
+    thumbnail = script.get("thumbnail", "Impactful Visual")
+    keywords = script.get("keywords", [])
+
+    # 2. Calculate Revenue (Est. $3.50 RPM for Tech niche)
+    views_est = score * 1000
+    revenue_est = round((views_est / 1000) * 3.50, 2)
+
+    # 3. Save
+    create_video_structure(
+        topic=topic,
+        script_text=script_body,
+        titles=title,
+        description=f"Video about {topic}.\n\nTags: {', '.join(keywords)}",
+        tags=keywords,
+        thumbnail_text=thumbnail,
+        shorts_list=shorts,
+        score_data={
+            "score": score,
+            "cpm": "3.50",
+            "revenue": revenue_est,
+            "best_country": "USA"
+        },
+        revenue_data={"est_revenue": revenue_est},
+        posting_time_data={"status": "To be scheduled"}
+    )

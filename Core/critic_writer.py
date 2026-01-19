@@ -1,55 +1,62 @@
-# Core/critic_writer.py
 import json
-from openai import OpenAI
-from config import OPENAI_API_KEY
+import re
+from google import genai
+from config import GEMINI_API_KEY
 
-client = OpenAI(api_key=OPENAI_API_KEY)
+
+def extract_json_from_text(text):
+    """
+    Last resort: If JSON fails, try to find a JSON-like block using regex.
+    """
+    try:
+        # Look for content between { and }
+        match = re.search(r'\{.*\}', text, re.DOTALL)
+        if match:
+            return json.loads(match.group(0))
+    except:
+        pass
+    return None
 
 
-def apply_critic_and_writer(
-        draft_script: str,
-        style_notes: str = "",
-        competitor_data: str = ""  # <--- NEW INPUT
-) -> dict:
-    # Build context string
-    context_block = ""
-    if style_notes:
-        context_block += f"\nPASSED WINNING PATTERNS:\n{style_notes}\n"
-    if competitor_data:
-        context_block += f"\nREAL-TIME COMPETITOR DATA:\n{competitor_data}\n"
+def apply_critic_and_writer(draft_script: str, style_notes: str = "", competitor_data: str = "") -> dict:
+    client = genai.Client(api_key=GEMINI_API_KEY)
 
     prompt = f"""
-    You are TWO EXPERTS working together.
+    You are a YouTube Expert. Rewrite this script.
 
-    INPUT SCRIPT:
-    \"\"\"
-    {draft_script}
-    \"\"\"
+    INPUT SCRIPT: {draft_script[:4000]}
 
-    {context_block}
-
-    TASK:
-    1. Analyze the competitor data. If there are "OUTLIER" videos, steal their angle (but not their words).
-    2. Rewrite the script to match the viral energy of the top competitors.
-    3. Ensure the tone is calm and educational (no hype).
-
-    OUTPUT FORMAT (JSON):
+    RETURN ONLY JSON (No Markdown, No extra text):
     {{
-        "title": "Viral title based on competitor analysis",
-        "thumbnail": "Visual description",
-        "script": "The full rewritten script...",
+        "title": "Write a viral clickbait title here",
+        "thumbnail": "Describe a high CTR thumbnail",
+        "script": "The rewritten script text...",
         "keywords": ["tag1", "tag2"]
     }}
     """
 
-    response = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[{"role": "user", "content": prompt}],
-        response_format={"type": "json_object"},
-        temperature=0.4
-    )
-
     try:
-        return json.loads(response.choices[0].message.content)
-    except:
-        return {"script": draft_script, "title": "Error", "keywords": []}
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=prompt,
+            config={"response_mime_type": "application/json"}
+        )
+
+        # 1. Try standard parse
+        text = response.text.strip()
+        # Remove markdown wrapping if present
+        if text.startswith("```"): text = text.split("\n", 1)[1].rsplit("\n", 1)[0]
+
+        return json.loads(text)
+
+    except Exception as e:
+        print(f"⚠️ JSON Parse failed: {e}")
+
+        # 2. Fallback: Manual Construct
+        # If AI fails to return JSON, we just use the draft and make up a title
+        return {
+            "title": "Watch This Before It's Too Late",
+            "thumbnail": "Shocked face with arrow pointing to graph",
+            "script": draft_script,
+            "keywords": ["AI", "Automation", "Future"]
+        }

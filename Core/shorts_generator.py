@@ -1,35 +1,23 @@
-# Core/shorts_generator.py
 import json
-from openai import OpenAI
-from config import OPENAI_API_KEY
-
-client = OpenAI(api_key=OPENAI_API_KEY)
+from google import genai
+from config import GEMINI_API_KEY
 
 
 def generate_shorts(script_text: str) -> dict:
+    client = genai.Client(api_key=GEMINI_API_KEY)
+
     prompt = f"""
-Create YouTube Shorts components from the script below.
+    Create 3 YouTube Shorts concepts from this script:
+    {script_text[:2000]}
 
-SCRIPT:
-\"\"\"
-{script_text}
-\"\"\"
+    Return pure JSON with keys: hook, body, cta.
+    """
 
-Return ONLY valid JSON:
-
-{{
-  "hook": "string",
-  "loop": "string",
-  "cta": "string"
-}}
-"""
-
-    response = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0.7,
-        max_tokens=300,
-        response_format={"type": "json_object"}
+    # ... inside generate_shorts function ...
+    response = client.models.generate_content(
+        model="gemini-2.5-flash",  # <--- UPDATED
+        contents=prompt,
+        config={"response_mime_type": "application/json"}
     )
 
-    return json.loads(response.choices[0].message.content)
+    return json.loads(response.text)

@@ -64,18 +64,21 @@ def run():
         print("❌ Script generation failed.")
         return
 
-    # 5. Shorts & Save
-    print("📱 Generating Shorts...")
-    try:
-        shorts = generate_shorts(final_output["script"])
-    except:
-        shorts = []
+        # ... inside run() function ...
 
-    print("💾 Saving content...")
-    save_all(topic=best_topic, script=final_output, shorts=shorts)
+        # 5. Shorts & Save
+        print("📱 Generating Shorts...")
+        try:
+            shorts = generate_shorts(final_output["script"])
+        except:
+            shorts = []
 
-    print("\n✅ DONE")
+        print("💾 Saving content...")
 
+        # --- UPDATED LINE BELOW ---
+        save_all(topic=best_topic, script=final_output, shorts=shorts, score=best_score)
+
+        print("\n✅ DONE")
 
 if __name__ == "__main__":
     run()

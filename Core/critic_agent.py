@@ -1,19 +1,13 @@
-from openai import OpenAI
-from config import OPENAI_API_KEY
+from google import genai
+from config import GEMINI_API_KEY
 
-client = OpenAI(api_key=OPENAI_API_KEY)
 
 def critic_review(text: str) -> str:
-    """
-    Lightweight critic agent used for fast sanity checks.
-    """
-    response = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[
-            {"role": "system", "content": "You are a strict YouTube content quality critic."},
-            {"role": "user", "content": text}
-        ],
-        temperature=0.4,
-        max_tokens=300
+    client = genai.Client(api_key=GEMINI_API_KEY)
+
+    # ... inside critic_review function ...
+    response = client.models.generate_content(
+        model="gemini-2.5-flash",  # <--- UPDATED
+        contents=f"Critique this script for retention: {text[:3000]}"
     )
-    return response.choices[0].message.content.strip()
+    return response.text

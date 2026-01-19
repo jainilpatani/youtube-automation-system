@@ -1,9 +1,10 @@
 # Core/script_generator.py
-from openai import OpenAI
-from config import OPENAI_API_KEY
+from google import genai
+from google.genai import errors
+import os
 import random
-
-client = OpenAI(api_key=OPENAI_API_KEY)
+import time
+from config import GEMINI_API_KEY
 
 # B2B Angles: Focus on "Efficiency" and "Profit", not "Fear"
 UNIQUE_ANGLES = [
@@ -16,17 +17,12 @@ UNIQUE_ANGLES = [
 
 # High-Ticket B2B Affiliate Triggers
 AFFILIATE_OFFERS = {
-    # Automation / Workflow
     "automation": "I built this workflow using [ZAPIER/MAKE]. Template below.",
     "agent": "Deploy your own agents with [AGENT_PLATFORM]. Link in description.",
     "support": "Automate your helpdesk with [CS_AI_TOOL].",
-
-    # Marketing / Sales
     "marketing": "Scale your outreach with [EMAIL_TOOL]. Free trial below.",
     "lead": "Capture more leads using [CRM_NAME].",
     "sales": "Automate your follow-ups with [SALES_AI].",
-
-    # Infrastructure
     "website": "Host your AI apps on [VPS_PROVIDER]. Best performance.",
     "data": "Organize your business data with [AIRTABLE/NOTION]."
 }
@@ -36,7 +32,6 @@ def inject_affiliate(script_text: str, topic: str) -> str:
     """Injects B2B offers naturally."""
     topic_lower = topic.lower()
     offer = ""
-
     for keyword, pitch in AFFILIATE_OFFERS.items():
         if keyword in topic_lower:
             offer = pitch
@@ -45,53 +40,42 @@ def inject_affiliate(script_text: str, topic: str) -> str:
     if offer:
         parts = script_text.split("\n\n")
         if len(parts) > 2:
-            # Insert a "Tool Recommendation" block
             parts.insert(2, f"\n(💡 PRO TIP: {offer})\n")
             return "\n\n".join(parts)
-
     return script_text
 
 
 def generate_original_script(topic: str) -> str:
     angle = random.choice(UNIQUE_ANGLES)
+    client = genai.Client(api_key=GEMINI_API_KEY)
 
     prompt = f"""
     You are a Business Automation Consultant.
-    You are explaining a strategy to business owners and entrepreneurs.
+    TOPIC: {topic}
+    ANGLE: {angle}
 
-    TOPIC:
-    {topic}
-
-    ANGLE:
-    {angle}
-
-    GOAL:
-    Convince the viewer that adopting this AI/Automation strategy will save them time or money.
-
-    TONE Rules:
-    - Professional but accessible (Smart Casual)
-    - Focus on ROI (Return on Investment)
-    - No fluff or "hustle culture" slang
-    - Concrete examples of business application
-
-    STRUCTURE:
-    1. The Pain Point (Why the old way is expensive/slow)
-    2. The Solution (The specific automation strategy)
-    3. The Implementation (How to actually do it)
-    4. The Result (Expected savings/growth)
-
-    LENGTH:
-    900–1200 words
-
-    OUTPUT:
-    Final script text only.
+    GOAL: Convince the viewer that adopting this AI strategy will save them time/money.
+    TONE: Professional, ROI-focused, No fluff.
+    STRUCTURE: Pain Point -> Solution -> Implementation -> Result.
+    LENGTH: 800–1200 words.
     """
 
-    response = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0.7
-    )
+    # --- RETRY LOGIC (The Fix for 503 Errors) ---
+    max_retries = 3
+    for attempt in range(max_retries):
+        try:
+            response = client.models.generate_content(
+                model="gemini-2.0-flash",  # Use 2.0-flash or 1.5-flash if 2.5 is busy
+                contents=prompt
+            )
+            raw_script = response.text.strip()
+            return inject_affiliate(raw_script, topic)
 
-    raw_script = response.choices[0].message.content.strip()
-    return inject_affiliate(raw_script, topic)
+        except errors.ServerError as e:
+            print(f"⚠️ Server Overloaded (Attempt {attempt + 1}/{max_retries}). Waiting 10s...")
+            time.sleep(10)  # Wait 10 seconds before trying again
+        except Exception as e:
+            print(f"❌ Error generating script: {e}")
+            break
+
+    return "Error: Could not generate script due to server overload."

@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project View</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        body { background-color: #0f172a; color: #f1f5f9; font-family: 'Inter', sans-serif; padding: 20px; margin: 0; }
+
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 20px;}
+        h1 { font-size: 1.2rem; margin: 0; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; }
+        .back-btn { background: #334155; color: white; padding: 8px 16px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; }
+        .back-btn:hover { background: #475569; }
+
+        /* GRID LAYOUT */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr; /* Script takes 2/3, Sidebar takes 1/3 */
+            gap: 30px;
+        }
+
+        /* LEFT SIDE: SCRIPT */
+        .scene-card { background: #1e293b; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); overflow: hidden; margin-bottom: 20px; }
+        .time-badge { background: #334155; color: #94a3b8; font-size: 0.85rem; padding: 8px 15px; font-weight: bold; }
+        .content-grid { display: grid; grid-template-columns: 1fr 1fr; }
+        .col-visual { border-right: 1px solid rgba(255,255,255,0.05); background: rgba(59, 130, 246, 0.05); padding: 15px; }
+        .col-audio { padding: 15px; line-height: 1.6; color: #e2e8f0; }
+        .plain-text { background: #1e293b; padding: 20px; border-radius: 12px; white-space: pre-wrap; }
+
+        /* RIGHT SIDE: METADATA SIDEBAR */
+        .sidebar { display: flex; flex-direction: column; gap: 20px; }
+
+        .meta-card {
+            background: #1e293b;
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .meta-card h3 { margin-top: 0; font-size: 0.9rem; color: #60a5fa; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+        .meta-content { background: rgba(0,0,0,0.2); padding: 10px; border-radius: 6px; font-size: 0.9rem; color: #cbd5e1; word-wrap: break-word; }
+
+        .stat-row { display: flex; justify-content: space-between; margin-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 5px; }
+        .stat-val { font-weight: bold; color: #34d399; }
+
+        .tags-cloud { display: flex; flex-wrap: wrap; gap: 5px; }
+        .tag { background: #334155; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>Project: {{ topic }}</h1>
+        <a href="/" class="back-btn">← Back to Dashboard</a>
+    </div>
+
+    <div class="main-grid">
+
+        <div class="script-section">
+            <h2 style="margin-top:0;">📝 Video Script</h2>
+            {{ script_html | safe }}
+        </div>
+
+        <div class="sidebar">
+
+            <div class="meta-card">
+                <h3>💰 Monetization Stats</h3>
+                <div class="stat-row"><span>Quality Score:</span> <span class="stat-val" style="color: #60a5fa;">{{ score.get('score', 'N/A') }}/100</span></div>
+                <div class="stat-row"><span>Est. CPM:</span> <span class="stat-val">${{ score.get('cpm', '0.00') }}</span></div>
+                <div class="stat-row"><span>Proj. Revenue:</span> <span class="stat-val">${{ score.get('revenue', '0.00') }}</span></div>
+                <div class="stat-row"><span>Best Market:</span> <span style="color:white;">{{ score.get('best_country', 'Global') }}</span></div>
+            </div>
+
+            <div class="meta-card">
+                <h3>🏆 Viral Title Options</h3>
+                <div class="meta-content" style="white-space: pre-line;">{{ titles }}</div>
+            </div>
+
+            <div class="meta-card">
+                <h3>🖼️ Thumbnail Concept</h3>
+                <div class="meta-content">{{ thumbnail }}</div>
+            </div>
+
+            <div class="meta-card">
+                <h3>🏷️ SEO Tags</h3>
+                <div class="meta-content">{{ tags }}</div>
+            </div>
+
+        </div>
+    </div>
+
+</body>
+</html>
