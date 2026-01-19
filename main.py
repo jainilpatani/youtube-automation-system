@@ -36,23 +36,25 @@ def run():
     best_topic, best_score = scored_topics[0]
     print(f"\n🏆 Selected TOPIC: {best_topic} (Score: {best_score})")
 
-    # 3. Memory (FIXED)
+    # 3. Memory (POLISHED LOGIC)
     print("🧠 Loading channel memory...")
     memory = load_memory()
     patterns = extract_patterns(memory)
 
-    # FIX: Extract string from dictionary
+    # FIX: We extract the LIST from the DICT, then join it into a STRING
     style_notes_text = ""
     if patterns and "style_notes" in patterns:
-        style_notes_text = " | ".join(map(str, patterns["style_notes"][:5]))
-        print(f"   ↳ Adapting to past wins: {style_notes_text[:50]}...")
+        notes_list = patterns["style_notes"]
+        if isinstance(notes_list, list):
+            style_notes_text = " | ".join(map(str, notes_list[:5]))
+            print(f"   ↳ Adapting to past wins: {style_notes_text[:60]}...")
 
     # 4. Generate & Critic
     print("\n✍️ Generating original draft...")
     draft_script = generate_original_script(best_topic)
 
     print("🧠 Applying critic + clarity writer...")
-    # FIX: Pass the string, not the dict
+    # FIX: Pass the clean string, not the dictionary
     final_output = apply_critic_and_writer(
         draft_script=draft_script,
         style_notes=style_notes_text

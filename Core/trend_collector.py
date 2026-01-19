@@ -13,33 +13,32 @@ def get_google_trends():
         return trends_df[0].tolist()[:20]
 
     except Exception as e:
-        print("⚠️ Google Trends blocked or unavailable. Using fallback trends.")
+        print("⚠️ Google Trends blocked. Using B2B Fallback Trends.")
         return fallback_trends()
 
 
 def fallback_trends():
     """
-    High-CPM, YouTube-safe fallback topics
-    (manually curated, stable)
+    B2B & Business Automation Trends (High CPM)
+    Targeting business owners looking to cut costs/save time.
     """
     return [
-        "How AI is changing jobs",
-        "AI tools businesses are using",
-        "Future of work with AI",
-        "How companies use artificial intelligence",
-        "AI and the global economy",
-        "Why AI is everywhere now",
-        "How automation affects income",
-        "Technology changing daily life",
-        "AI explained simply",
-        "How software is replacing manual work"
+        "Automating customer support with AI agents",
+        "AI marketing workflows for small business",
+        "Replacing middle management with software",
+        "How to cut business costs using AI",
+        "AI lead generation strategies 2025",
+        "Automating payroll and HR systems",
+        "The ROI of AI implementation",
+        "Custom AI tools vs Enterprise software",
+        "Scaling a business without hiring",
+        "Future of B2B sales automation"
     ]
 
 
 def get_reddit_trends():
     """
-    Reddit is optional.
-    If not configured, return empty list.
+    Scans business-focused subreddits instead of generic tech.
     """
     try:
         import praw
@@ -55,11 +54,13 @@ def get_reddit_trends():
         )
 
         topics = []
-        for post in reddit.subreddit("technology").hot(limit=10):
-            topics.append(post.title)
+        # CHANGED: Scans 'entrepreneur' and 'smallbusiness' for real pain points
+        for sub in ["entrepreneur", "smallbusiness", "marketing"]:
+            for post in reddit.subreddit(sub).hot(limit=3):
+                topics.append(post.title)
 
         return topics
 
     except Exception:
-        print("⚠️ Reddit unavailable. Skipping Reddit trends.")
+        print("⚠️ Reddit unavailable. Skipping.")
         return []
