@@ -1,62 +1,65 @@
-import json
-import re
 from google import genai
+import json
+import ast
 from config import GEMINI_API_KEY
 
 
-def extract_json_from_text(text):
-    """
-    Last resort: If JSON fails, try to find a JSON-like block using regex.
-    """
-    try:
-        # Look for content between { and }
-        match = re.search(r'\{.*\}', text, re.DOTALL)
-        if match:
-            return json.loads(match.group(0))
-    except:
-        pass
-    return None
-
-
-def apply_critic_and_writer(draft_script: str, style_notes: str = "", competitor_data: str = "") -> dict:
+def apply_critic_and_writer(draft_script: str):
     client = genai.Client(api_key=GEMINI_API_KEY)
 
-    prompt = f"""
-    You are a YouTube Expert. Rewrite this script.
+    # 💎 PREMIUM MODEL
+    model_name = "gemini-2.5-pro"
 
-    INPUT SCRIPT: {draft_script[:4000]}
+    # 1. CRITIC STEP
+    critic_prompt = f"""
+    You are a YouTube Script Critic. Review this script:
+    {draft_script[:4000]}
 
-    RETURN ONLY JSON (No Markdown, No extra text):
+    Identify 3 weaknesses in the 'Hook' and 'Retention'.
+    """
+
+    critique = "Standard Polish"
+    try:
+        critic_response = client.models.generate_content(
+            model=model_name,
+            contents=critic_prompt
+        )
+        critique = critic_response.text
+    except Exception as e:
+        print(f"⚠️ Critic skipped: {e}")
+
+    # 2. WRITER STEP
+    writer_prompt = f"""
+    You are a Script Writer. Rewrite this script based on this critique: {critique}
+
+    ORIGINAL SCRIPT:
+    {draft_script[:4000]}
+
+    Output structured JSON:
     {{
-        "title": "Write a viral clickbait title here",
-        "thumbnail": "Describe a high CTR thumbnail",
-        "script": "The rewritten script text...",
-        "keywords": ["tag1", "tag2"]
+        "title": "Viral Title",
+        "thumbnail": "Visual description",
+        "keywords": ["tag1", "tag2"],
+        "script": {{
+            "00:00": {{ "visual": "...", "host": "..." }},
+            "00:30": {{ "visual": "...", "host": "..." }}
+        }}
     }}
     """
 
     try:
         response = client.models.generate_content(
-            model="gemini-2.5-flash",
-            contents=prompt,
+            model=model_name,
+            contents=writer_prompt,
             config={"response_mime_type": "application/json"}
         )
 
-        # 1. Try standard parse
-        text = response.text.strip()
-        # Remove markdown wrapping if present
-        if text.startswith("```"): text = text.split("\n", 1)[1].rsplit("\n", 1)[0]
-
-        return json.loads(text)
+        # Parse JSON safely
+        try:
+            return json.loads(response.text)
+        except:
+            return ast.literal_eval(response.text)
 
     except Exception as e:
-        print(f"⚠️ JSON Parse failed: {e}")
-
-        # 2. Fallback: Manual Construct
-        # If AI fails to return JSON, we just use the draft and make up a title
-        return {
-            "title": "Watch This Before It's Too Late",
-            "thumbnail": "Shocked face with arrow pointing to graph",
-            "script": draft_script,
-            "keywords": ["AI", "Automation", "Future"]
-        }
+        print(f"⚠️ Writer Error: {e}")
+        return {"script": draft_script}

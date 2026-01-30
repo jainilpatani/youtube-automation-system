@@ -1,66 +1,67 @@
-# Core/trend_collector.py
+import requests
+import xml.etree.ElementTree as ET
 
-from pytrends.request import TrendReq
+# 📡 CONFIG: Sources
+GOOGLE_QUERY = "AI Automation Business OR SaaS OR AI Agents"
+GOOGLE_RSS = f"https://news.google.com/rss/search?q={GOOGLE_QUERY}+when:7d&hl=en-US&gl=US&ceid=US:en"
+
+# 👽 REDDIT CONFIG (No Keys Needed)
+# We look at specific subreddits for "Top" posts of the day
+REDDIT_SUBS = [
+    "https://www.reddit.com/r/ArtificialInteligence/top/.rss?t=day",
+    "https://www.reddit.com/r/ChatGPT/top/.rss?t=day",
+    "https://www.reddit.com/r/SaaS/top/.rss?t=day"
+]
+
 
 def get_google_trends():
-    """
-    Safe Google Trends fetch.
-    If Google blocks, fallback is used.
-    """
+    """Fetches LIVE news from Google RSS."""
+    print(f"📡 Connecting to Google News ({GOOGLE_QUERY})...")
+    trends = []
+
     try:
-        pytrends = TrendReq(hl="en-US", tz=330)
-        trends_df = pytrends.trending_searches(pn="global")
-        return trends_df[0].tolist()[:20]
-
+        response = requests.get(GOOGLE_RSS, timeout=10)
+        if response.status_code == 200:
+            root = ET.fromstring(response.content)
+            for item in root.findall('./channel/item')[:3]:
+                title = item.find('title').text.rsplit(' - ', 1)[0]
+                trends.append({"title": title, "traffic": "🔥 Google News", "source": "Google"})
     except Exception as e:
-        print("⚠️ Google Trends blocked. Using B2B Fallback Trends.")
-        return fallback_trends()
+        print(f"⚠️ Google RSS Failed: {e}")
 
-
-def fallback_trends():
-    """
-    B2B & Business Automation Trends (High CPM)
-    Targeting business owners looking to cut costs/save time.
-    """
-    return [
-        "Automating customer support with AI agents",
-        "AI marketing workflows for small business",
-        "Replacing middle management with software",
-        "How to cut business costs using AI",
-        "AI lead generation strategies 2025",
-        "Automating payroll and HR systems",
-        "The ROI of AI implementation",
-        "Custom AI tools vs Enterprise software",
-        "Scaling a business without hiring",
-        "Future of B2B sales automation"
-    ]
+    return trends
 
 
 def get_reddit_trends():
-    """
-    Scans business-focused subreddits instead of generic tech.
-    """
-    try:
-        import praw
-        from config import REDDIT_CLIENT_ID, REDDIT_CLIENT_SECRET, REDDIT_USER_AGENT
+    """Fetches Reddit Data via Public RSS (Bypasses API Key requirement)."""
+    print("👽 Connecting to Reddit Public Feeds...")
+    trends = []
 
-        if not REDDIT_CLIENT_ID:
-            return []
+    # We must pretend to be a real browser to avoid blocks
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+    }
 
-        reddit = praw.Reddit(
-            client_id=REDDIT_CLIENT_ID,
-            client_secret=REDDIT_CLIENT_SECRET,
-            user_agent=REDDIT_USER_AGENT
-        )
+    for url in REDDIT_SUBS:
+        try:
+            response = requests.get(url, headers=headers, timeout=5)
+            if response.status_code == 200:
+                root = ET.fromstring(response.content)
+                # Get the #1 top post from each subreddit
+                for entry in root.findall('{http://www.w3.org/2005/Atom}entry')[:1]:
+                    title = entry.find('{http://www.w3.org/2005/Atom}title').text
+                    link = entry.find('{http://www.w3.org/2005/Atom}link').attrib['href']
+                    subreddit = url.split('/r/')[1].split('/')[0]
 
-        topics = []
-        # CHANGED: Scans 'entrepreneur' and 'smallbusiness' for real pain points
-        for sub in ["entrepreneur", "smallbusiness", "marketing"]:
-            for post in reddit.subreddit(sub).hot(limit=3):
-                topics.append(post.title)
+                    trends.append({
+                        "title": title,
+                        "traffic": f"✨ r/{subreddit}",
+                        "source": "Reddit"
+                    })
+        except Exception:
+            continue  # If one fails, try the next
 
-        return topics
+    if not trends:
+        print("⚠️ Reddit RSS blocked (IP restriction). Skipping Reddit.")
 
-    except Exception:
-        print("⚠️ Reddit unavailable. Skipping.")
-        return []
+    return trends

@@ -1,4 +1,3 @@
-# Core/script_generator.py
 from google import genai
 from google.genai import errors
 import os
@@ -60,12 +59,16 @@ def generate_original_script(topic: str) -> str:
     LENGTH: 800–1200 words.
     """
 
-    # --- RETRY LOGIC (The Fix for 503 Errors) ---
+    # 💎 PREMIUM MODEL
+    model_name = "gemini-2.5-pro"
+
+    print(f"💎 PREMIUM: Using Model {model_name} for maximum uniqueness...")
+
     max_retries = 3
     for attempt in range(max_retries):
         try:
             response = client.models.generate_content(
-                model="gemini-2.0-flash",  # Use 2.0-flash or 1.5-flash if 2.5 is busy
+                model=model_name,
                 contents=prompt
             )
             raw_script = response.text.strip()
@@ -73,7 +76,7 @@ def generate_original_script(topic: str) -> str:
 
         except errors.ServerError as e:
             print(f"⚠️ Server Overloaded (Attempt {attempt + 1}/{max_retries}). Waiting 10s...")
-            time.sleep(10)  # Wait 10 seconds before trying again
+            time.sleep(10)
         except Exception as e:
             print(f"❌ Error generating script: {e}")
             break

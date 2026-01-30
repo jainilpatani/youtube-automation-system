@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Detailed Statistics</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        body { background: #0f172a; color: white; font-family: 'Inter', sans-serif; padding: 40px; }
+        h1 { color: #60a5fa; }
+        .table-container { background: #1e293b; padding: 20px; border-radius: 12px; margin-top: 20px; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 15px; text-align: left; border-bottom: 1px solid #334155; }
+        th { color: #94a3b8; text-transform: uppercase; font-size: 0.85rem; }
+        tr:hover { background: #334155; }
+        .tag-high { color: #34d399; font-weight: bold; }
+        .back-link { color: #94a3b8; text-decoration: none; margin-bottom: 20px; display: inline-block; }
+    </style>
+</head>
+<body>
+    <a href="/" class="back-link">← Back to Dashboard</a>
+    <h1>📊 Channel Performance</h1>
+
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Topic</th>
+                    <th>Quality Score</th>
+                    <th>Est. Revenue</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for video in videos %}
+                <tr>
+                    <td>{{ video.date }}</td>
+                    <td>{{ video.topic }}</td>
+                    <td class="tag-high">{{ video.score }}</td>
+                    <td>${{ video.revenue }}</td>
+                    <td>✅ {{ video.status }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>

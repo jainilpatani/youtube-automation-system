@@ -50,9 +50,9 @@ def create_video_structure(topic, script_text, titles, description, tags, thumbn
     print(f"✅ Content saved at: {base_path}")
 
 
-def save_all(topic, script, shorts, score=0):
+def save_all(topic, script, shorts, score=0, posting_time="N/A"):
     """
-    Now accepts 'score' to generate real revenue predictions.
+    Accepts 'score' and 'posting_time' to generate real predictions.
     """
     # 1. Extract Data
     script_body = script.get("script", "")
@@ -60,9 +60,9 @@ def save_all(topic, script, shorts, score=0):
     thumbnail = script.get("thumbnail", "Impactful Visual")
     keywords = script.get("keywords", [])
 
-    # 2. Calculate Revenue (Est. $3.50 RPM for Tech niche)
+    # 2. Calculate Revenue (Est. $25.00 RPM for B2B niche)
     views_est = score * 1000
-    revenue_est = round((views_est / 1000) * 3.50, 2)
+    revenue_est = round((views_est / 1000) * 25.00, 2)
 
     # 3. Save
     create_video_structure(
@@ -75,9 +75,10 @@ def save_all(topic, script, shorts, score=0):
         shorts_list=shorts,
         score_data={
             "score": score,
-            "cpm": "3.50",
+            "cpm": "25.00",
             "revenue": revenue_est,
-            "best_country": "USA"
+            "best_country": "USA",
+            "best_posting_time": posting_time  # <--- NEW FIELD ADDED
         },
         revenue_data={"est_revenue": revenue_est},
         posting_time_data={"status": "To be scheduled"}

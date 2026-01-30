@@ -3,92 +3,169 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Project View</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <title>{{ topic }} - Command Center</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        body { background-color: #0f172a; color: #f1f5f9; font-family: 'Inter', sans-serif; padding: 20px; margin: 0; }
-
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 20px;}
-        h1 { font-size: 1.2rem; margin: 0; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; }
-        .back-btn { background: #334155; color: white; padding: 8px 16px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; }
-        .back-btn:hover { background: #475569; }
-
-        /* GRID LAYOUT */
-        .main-grid {
-            display: grid;
-            grid-template-columns: 2fr 1fr; /* Script takes 2/3, Sidebar takes 1/3 */
-            gap: 30px;
+        :root {
+            --bg-deep: #050511;
+            --glass-panel: rgba(20, 20, 35, 0.6);
+            --border-light: rgba(255, 255, 255, 0.1);
+            --neon-cyan: #00f2ea;
+            --neon-pink: #ff0055;
+            --neon-lime: #0aff60;
+            --neon-purple: #bd00ff;
+            --neon-amber: #ffaa00;
+            --text-main: #ffffff;
+            --text-dim: #94a3b8;
         }
-
-        /* LEFT SIDE: SCRIPT */
-        .scene-card { background: #1e293b; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); overflow: hidden; margin-bottom: 20px; }
-        .time-badge { background: #334155; color: #94a3b8; font-size: 0.85rem; padding: 8px 15px; font-weight: bold; }
-        .content-grid { display: grid; grid-template-columns: 1fr 1fr; }
-        .col-visual { border-right: 1px solid rgba(255,255,255,0.05); background: rgba(59, 130, 246, 0.05); padding: 15px; }
-        .col-audio { padding: 15px; line-height: 1.6; color: #e2e8f0; }
-        .plain-text { background: #1e293b; padding: 20px; border-radius: 12px; white-space: pre-wrap; }
-
-        /* RIGHT SIDE: METADATA SIDEBAR */
-        .sidebar { display: flex; flex-direction: column; gap: 20px; }
-
-        .meta-card {
-            background: #1e293b;
-            padding: 20px;
-            border-radius: 12px;
-            border: 1px solid rgba(255,255,255,0.05);
+        body {
+            background-color: var(--bg-deep);
+            background-image: radial-gradient(circle at 0% 0%, rgba(189, 0, 255, 0.15), transparent 40%), radial-gradient(circle at 100% 0%, rgba(0, 242, 234, 0.15), transparent 40%);
+            color: var(--text-main); font-family: 'Outfit', sans-serif; margin: 0; padding: 30px;
         }
+        .container { max-width: 1200px; margin: 0 auto; }
 
-        .meta-card h3 { margin-top: 0; font-size: 0.9rem; color: #60a5fa; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
-        .meta-content { background: rgba(0,0,0,0.2); padding: 10px; border-radius: 6px; font-size: 0.9rem; color: #cbd5e1; word-wrap: break-word; }
+        /* HEADER */
+        .header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 30px; border-bottom: 1px solid var(--border-light); padding-bottom: 20px; }
+        h1 { font-size: 2.5rem; margin: 0; background: linear-gradient(90deg, #00f2ea, #bd00ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .back-link { color: var(--text-dim); text-decoration: none; font-weight: 600; }
+        .back-link:hover { color: var(--neon-cyan); }
+        .time-pill { font-family: 'JetBrains Mono'; font-size: 0.8rem; color: var(--neon-lime); background: rgba(10,255,96,0.1); padding: 5px 12px; border-radius: 20px; }
 
-        .stat-row { display: flex; justify-content: space-between; margin-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 5px; }
-        .stat-val { font-weight: bold; color: #34d399; }
+        /* TABS */
+        .tabs { display: flex; gap: 15px; margin-bottom: 25px; }
+        .tab-btn { background: rgba(255,255,255,0.05); border: 1px solid var(--border-light); color: var(--text-dim); padding: 12px 24px; cursor: pointer; border-radius: 8px; font-weight: 700; flex: 1; text-align: center; }
+        .tab-btn.active { border-color: var(--neon-cyan); color: var(--neon-cyan); background: rgba(0, 242, 234, 0.05); }
 
-        .tags-cloud { display: flex; flex-wrap: wrap; gap: 5px; }
-        .tag { background: #334155; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; }
+        /* PANELS */
+        .glass-panel { background: var(--glass-panel); backdrop-filter: blur(20px); border: 1px solid var(--border-light); border-radius: 16px; padding: 30px; margin-bottom: 20px; }
+        .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .panel-title { font-size: 1.3rem; font-weight: 700; color: white; }
+        .section { display: none; } .section.active { display: block; }
+
+        /* SCRIPT */
+        .scene-card { display: flex; gap: 25px; padding: 25px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .time-col { width: 80px; flex-shrink: 0; color: var(--neon-pink); font-family: 'JetBrains Mono'; font-weight: bold; }
+        .visual-box { background: rgba(0, 242, 234, 0.05); border-left: 2px solid var(--neon-cyan); padding: 12px; margin-bottom: 12px; color: var(--neon-cyan); line-height: 1.5; }
+        .audio-box { color: #e2e8f0; font-size: 1.05rem; line-height: 1.6; padding-left: 14px; }
+
+        /* STATS */
+        .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 20px; }
+        .stat-card { background: rgba(255,255,255,0.03); padding: 20px; border-radius: 12px; border: 1px solid var(--border-light); text-align: center; }
+        .stat-label { color: var(--text-dim); font-size: 0.85rem; text-transform: uppercase; display: block; margin-bottom: 5px; }
+        .stat-val { font-size: 1.5rem; font-weight: 700; color: white; }
+        .stat-green { color: var(--neon-lime); text-shadow: 0 0 10px rgba(10,255,96,0.3); }
+        .stat-pending { color: var(--neon-amber); font-size: 1.1rem; }
+
+        /* SHORTS & PROMPTS */
+        .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+        .card-box { background: rgba(255,255,255,0.03); padding: 20px; border-radius: 12px; border: 1px solid var(--border-light); }
+
+        textarea { width: 100%; background: #0b0b1a; color: #cbd5e1; border: 1px solid rgba(255,255,255,0.1); padding: 15px; border-radius: 8px; font-family: 'JetBrains Mono'; }
+        .btn-copy { background: transparent; color: white; border: 1px solid rgba(255,255,255,0.2); padding: 6px 14px; border-radius: 6px; cursor: pointer; }
+        .btn-copy:hover { background: white; color: black; }
     </style>
 </head>
 <body>
 
+<div class="container">
     <div class="header">
-        <h1>Project: {{ topic }}</h1>
-        <a href="/" class="back-btn">← Back to Dashboard</a>
+        <div><a href="/" class="back-link">← DASHBOARD</a><h1>{{ topic }}</h1></div>
+        <div class="time-pill">IST: {{ now_ist }}</div>
     </div>
 
-    <div class="main-grid">
+    <div class="tabs">
+        <button class="tab-btn active" onclick="openTab('script')">📄 Script</button>
+        <button class="tab-btn" onclick="openTab('shorts')">📱 Shorts</button>
+        <button class="tab-btn" onclick="openTab('prompts')">🎨 Prompts</button>
+        <button class="tab-btn" onclick="openTab('meta')">💰 Metadata</button>
+    </div>
 
-        <div class="script-section">
-            <h2 style="margin-top:0;">📝 Video Script</h2>
-            {{ script_html | safe }}
-        </div>
-
-        <div class="sidebar">
-
-            <div class="meta-card">
-                <h3>💰 Monetization Stats</h3>
-                <div class="stat-row"><span>Quality Score:</span> <span class="stat-val" style="color: #60a5fa;">{{ score.get('score', 'N/A') }}/100</span></div>
-                <div class="stat-row"><span>Est. CPM:</span> <span class="stat-val">${{ score.get('cpm', '0.00') }}</span></div>
-                <div class="stat-row"><span>Proj. Revenue:</span> <span class="stat-val">${{ score.get('revenue', '0.00') }}</span></div>
-                <div class="stat-row"><span>Best Market:</span> <span style="color:white;">{{ score.get('best_country', 'Global') }}</span></div>
-            </div>
-
-            <div class="meta-card">
-                <h3>🏆 Viral Title Options</h3>
-                <div class="meta-content" style="white-space: pre-line;">{{ titles }}</div>
-            </div>
-
-            <div class="meta-card">
-                <h3>🖼️ Thumbnail Concept</h3>
-                <div class="meta-content">{{ thumbnail }}</div>
-            </div>
-
-            <div class="meta-card">
-                <h3>🏷️ SEO Tags</h3>
-                <div class="meta-content">{{ tags }}</div>
-            </div>
-
+    <div id="script" class="section active">
+        <div class="glass-panel">
+            <div class="panel-header"><div class="panel-title">Video Script</div><button class="btn-copy" onclick="copyText('full-script-raw')">Copy All</button></div>
+            <textarea id="full-script-raw" style="display:none;">{{ raw_script }}</textarea>
+            <div style="max-height: 800px; overflow-y: auto;">{{ script_html|safe }}</div>
         </div>
     </div>
 
+    <div id="shorts" class="section">
+        {% if shorts %}
+            <div class="grid-3">
+            {% for short in shorts %}
+                <div class="card-box" style="border-top: 3px solid var(--neon-pink);">
+                    <div style="font-weight:700; color:white; margin-bottom:10px; display:flex; justify-content:space-between;">Short #{{ loop.index }} <button class="btn-copy" onclick="copyText('short-text-{{ loop.index }}')">Copy</button></div>
+                    <textarea id="short-text-{{ loop.index }}" style="height:250px; border:none; background:rgba(0,0,0,0.2);">{{ short.script }}</textarea>
+                </div>
+            {% endfor %}
+            </div>
+        {% else %}<div class="glass-panel" style="text-align:center;">No Shorts Generated.</div>{% endif %}
+    </div>
+
+    <div id="prompts" class="section">
+        <div class="grid-3">
+            <div class="card-box"><div style="font-weight:700; color:var(--neon-purple); margin-bottom:10px;">Authority</div><textarea id="t1" style="height:140px; margin-bottom:10px;">{{ thumbnails.authority }}</textarea><button class="btn-copy" style="width:100%" onclick="copyText('t1')">Copy</button></div>
+            <div class="card-box" style="border:1px solid var(--neon-cyan);"><div style="font-weight:700; color:var(--neon-cyan); margin-bottom:10px;">🏆 Transformation</div><textarea id="t2" style="height:140px; margin-bottom:10px;">{{ thumbnails.transformation }}</textarea><button class="btn-copy" style="width:100%; background:var(--neon-cyan); color:black;" onclick="copyText('t2')">Copy</button></div>
+            <div class="card-box"><div style="font-weight:700; color:var(--neon-amber); margin-bottom:10px;">Minimalist</div><textarea id="t3" style="height:140px; margin-bottom:10px;">{{ thumbnails.minimalist }}</textarea><button class="btn-copy" style="width:100%" onclick="copyText('t3')">Copy</button></div>
+        </div>
+        <div class="glass-panel" style="margin-top:20px;">
+            <div class="panel-header"><div class="panel-title">🎬 InVideo Prompt</div><button class="btn-copy" onclick="copyText('inv')">Copy</button></div>
+            <textarea id="inv" style="height:120px;">{{ invideo_prompt }}</textarea>
+        </div>
+    </div>
+
+    <div id="meta" class="section">
+        <div class="glass-panel">
+            <div class="panel-title" style="margin-bottom:20px;">💰 Monetization & Schedule</div>
+            <div class="stat-grid">
+                <div class="stat-card"><span class="stat-label">Quality Score</span><span class="stat-val">{{ score.get('quality', 'N/A') }}/100</span></div>
+                <div class="stat-card"><span class="stat-label">Est. CPM</span><span class="stat-val stat-green">${{ score.get('cpm', '0.00') }}</span></div>
+                <div class="stat-card"><span class="stat-label">Proj. Revenue</span><span class="stat-val stat-green">${{ score.get('revenue', '0.00') }}</span></div>
+                <div class="stat-card"><span class="stat-label">🚀 Recommended Post</span><span class="stat-val stat-pending" style="font-size:1rem;">{{ score.get('upload_time', 'Generating...') }}</span></div>
+            </div>
+        </div>
+
+        <div class="glass-panel">
+            <div style="margin-bottom:20px;">
+                <div style="font-weight:700; color:var(--neon-cyan); margin-bottom:10px;">YOUTUBE TITLE <button class="btn-copy" style="float:right" onclick="copyTextFromVal(this)">Copy</button></div>
+                <textarea style="height:60px;">{{ titles }}</textarea>
+            </div>
+
+            <div style="margin-bottom:20px;">
+                <div style="font-weight:700; color:var(--neon-lime); margin-bottom:10px;">VIDEO DESCRIPTION <button class="btn-copy" style="float:right" onclick="copyTextFromVal(this)">Copy</button></div>
+                <textarea style="height:200px; color:#cbd5e1; border-left:3px solid var(--neon-lime);">
+In this video, we explore {{ topic }} and how it impacts your business strategy in 2026.
+
+🚀 Key Takeaways:
+- The truth about {{ topic }}
+- Steps to automate your workflow
+- 3 Hidden tools nobody talks about
+
+Tools Mentioned:
+- Python & AI Agents
+- Gemini API
+- InVideo AI
+
+#AI #{{ topic|replace(" ", "") }} #Automation #Tech</textarea>
+            </div>
+
+            <div>
+                <div style="font-weight:700; color:var(--neon-pink); margin-bottom:10px;">SEO TAGS <button class="btn-copy" style="float:right" onclick="copyTextFromVal(this)">Copy</button></div>
+                <textarea style="height:100px;">{{ tags }}</textarea>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function openTab(tabName) {
+        document.querySelectorAll('.section').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+        document.getElementById(tabName).classList.add('active');
+        event.currentTarget.classList.add('active');
+    }
+    function copyText(id) { navigator.clipboard.writeText(document.getElementById(id).value).then(() => alert("Copied!")); }
+    function copyTextFromVal(btn) { navigator.clipboard.writeText(btn.parentElement.nextElementSibling.value).then(() => alert("Copied!")); }
+</script>
 </body>
 </html>
